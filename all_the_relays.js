@@ -3,8 +3,16 @@ const { ethers, Wallet, providers } = require('ethers');
 const { FlashbotsBundleProvider } = require('@flashbots/ethers-provider-bundle');
 
 const ETHEREUM_RPC_URL = 'https://virtual.mainnet.rpc.tenderly.co/c4e60e60-6398-4e23-9ffc-f48f66d9706e';
-const FLASHBOTS_RELAY_URL = 'relay.flashbots.net';
 const PRIVATE_KEY = '03680460bd83d52a2be9932b4b1e1f2251d6d56481eaa23e5f364194ca04fbf3';
+
+const relays = [
+    'boost-relay.flashbots.net',
+    'relay.edennetwork.io',
+    'mainnet-relay.securerpc.com',
+    'relay.ultrasound.money',
+    'relay.wenmerge.com',
+    'proof-relay.ponrelay.com'
+];
 
 const addresses = [
     '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', // WETH
@@ -94,8 +102,13 @@ async function monitorBundleStatus(bundleHash, startBlockNumber) {
         await new Promise(resolve => setTimeout(resolve, 10000)); // Wait for 10 seconds before next check
     }
 }
-
-async function submitBundle() {
+async function testRelays() {
+    for (const relay of relays) {
+        console.log(`Testing relay: ${relay}`);
+        await submitBundle(relay);
+    }
+}
+async function submitBundle(relayUrl) {
     try {
         const abi = new ethers.utils.Interface([
             "function exactInputSingle(tuple(address tokenIn, address tokenOut, uint24 fee, address recipient, uint256 deadline, uint256 amountIn, uint256 amountOutMinimum, uint160 sqrtPriceLimitX96)) external returns (uint256 amountOut)"
@@ -195,7 +208,7 @@ async function submitBundle() {
         console.log('Generated Signature:', signature);
 
         const options = {
-            hostname: FLASHBOTS_RELAY_URL,
+            hostname: relayUrl,
             port: 443,
             path: '/',
             method: 'POST',
@@ -239,8 +252,9 @@ async function submitBundle() {
     }
 }
 
-submitBundle().catch((error) => {
+testRelays().catch((error) => {
     console.error('Unhandled Error:', error);
 });
+
 console.log(`Auth Signer Address: ${authSigner.address}`);
 console.log(`Auth Signer Private Key: ${authSigner.privateKey}`);
